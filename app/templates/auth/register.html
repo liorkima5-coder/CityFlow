@@ -1,67 +1,50 @@
 {% extends "base.html" %}
 
+{% block title %}הרשמה למערכת{% endblock %}
+
 {% block auth_content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            
-            <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center bg-white p-3 rounded-circle shadow-sm mb-3" style="width: 70px; height: 70px;">
-                    <i class="fa-solid fa-user-plus fa-2x text-primary"></i>
-                </div>
-                <h3 class="fw-bold text-dark brand-logo">הצטרפות ל-CityFlow</h3>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0">יצירת חשבון חדש</h4>
             </div>
-            
-            <div class="card shadow-lg border-0">
-                <div class="card-body p-4">
-                    
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} py-2 fs-6 text-center">{{ message }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+            <div class="card-body p-4">
+                
+                {# הודעות מערכת #}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
 
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">שם מלא</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
-                                <input type="text" name="full_name" class="form-control border-start-0 ps-0 bg-light" placeholder="ישראל ישראלי" required>
-                            </div>
-                        </div>
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">אימייל</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0"><i class="fa-regular fa-envelope text-muted"></i></span>
-                                <input type="email" name="email" class="form-control border-start-0 ps-0 bg-light" placeholder="user@cityflow.com" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label text-muted small fw-bold">סיסמה</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
-                                <input type="password" name="password" class="form-control border-start-0 ps-0 bg-light" placeholder="••••••••" required>
-                            </div>
-                        </div>
-                        
-                        <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm">צור חשבון</button>
-                    </form>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">שם מלא</label>
+                        <input type="text" class="form-control" name="full_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">כתובת אימייל</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">סיסמה</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">הירשם</button>
+                    </div>
+                </form>
             </div>
-            
-            <div class="text-center mt-4">
-                <span class="text-muted small">כבר יש לך חשבון?</span>
-                <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-bold small ms-1">התחבר כאן</a>
-            </div>
-            
-            <div class="text-center mt-5 text-muted text-xs opacity-50">
-                &copy; 2024 CityFlow Systems. All rights reserved.
+            <div class="card-footer text-center py-3 bg-light">
+                כבר רשום? <a href="{{ url_for('auth.login') }}" class="fw-bold">התחבר כאן</a>
             </div>
         </div>
     </div>
