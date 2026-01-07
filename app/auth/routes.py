@@ -33,35 +33,42 @@ def register():
         return redirect(url_for('main.index'))
         
     if request.method == 'POST':
-        email = request.form.get('email')
-        full_name = request.form.get('full_name')
-        password = request.form.get('password')
-        
-        # בדיקה אם המשתמש קיים
-        if User.query.filter_by(email=email).first():
-            flash('כתובת האימייל הזו כבר רשומה במערכת.', 'warning')
+        try:
+            email = request.form.get('email')
+            full_name = request.form.get('full_name')
+            password = request.form.get('password')
+            
+            # בדיקה אם המשתמש קיים
+            if User.query.filter_by(email=email).first():
+                flash('כתובת האימייל הזו כבר רשומה במערכת.', 'warning')
+                return redirect(url_for('auth.register'))
+                
+            # יצירת תפקיד ברירת מחדל אם לא קיים (מונע קריסה)
+            role = Role.query.filter_by(name='Project Manager').first()
+            if not role:
+                role = Role(name='Project Manager', description='Default Role Created Automatically')
+                db.session.add(role)
+                # שים לב: אנחנו לא עושים commit כאן, אלא בסוף עם המשתמש
+                
+            new_user = User(
+                email=email,
+                full_name=full_name,
+                password=generate_password_hash(password),
+                role=role,
+                is_active=True
+            )
+            
+            db.session.add(new_user)
+            db.session.commit()
+            
+            flash('החשבון נוצר בהצלחה! כעת ניתן להתחבר.', 'success')
+            return redirect(url_for('auth.login'))
+            
+        except Exception as e:
+            db.session.rollback() # ביטול שינויים במקרה של שגיאה
+            print(f"Error during registration: {e}") # הדפסה ללוגים
+            flash(f'שגיאה ביצירת החשבון: {str(e)}', 'danger')
             return redirect(url_for('auth.register'))
-            
-        # יצירת משתמש חדש (ברירת מחדל: מנהל פרויקט, כדי שיהיה לו מעניין)
-        # אם אין תפקידים במערכת - ניצור אותם אוטומטית
-        role = Role.query.filter_by(name='Project Manager').first()
-        if not role:
-            role = Role(name='Project Manager', description='Default User Role')
-            db.session.add(role)
-            
-        new_user = User(
-            email=email,
-            full_name=full_name,
-            password=generate_password_hash(password),
-            role=role,
-            is_active=True
-        )
-        
-        db.session.add(new_user)
-        db.session.commit()
-        
-        flash('החשבון נוצר בהצלחה! כעת ניתן להתחבר.', 'success')
-        return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html')
 
