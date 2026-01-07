@@ -6,6 +6,8 @@ email-validator
 Faker
 python-dotenv
 Werkzeug
-gunicorn
 Flask-Migrate
 Flask-Limiter
+# --- תוספות חובה ל-Render ---
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
