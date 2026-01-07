@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
-from models import User # שים לב שאנחנו מייבאים מ-models
+from models import User, db
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-@auth_bp.route('/login', methods=['GET', 'POST']) # <--- זה התיקון הקריטי!
+# 👇👇👇 השורה הזאת חייבת להיראות בדיוק ככה! 👇👇👇
+@auth_bp.route('/login', methods=['GET', 'POST']) 
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
@@ -18,6 +19,7 @@ def login():
         
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
+            # הפניה לדף הבית אחרי התחברות
             return redirect(url_for('main.dashboard'))
         else:
             flash('שם משתמש או סיסמה שגויים', 'danger')
