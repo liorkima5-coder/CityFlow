@@ -7,3 +7,4 @@ Faker
 python-dotenv
 Werkzeug
 gunicorn
+Flask-Migrate
