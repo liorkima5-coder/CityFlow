@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold">ניהול פרויקטים</h4>
+    <button class="btn btn-primary" onclick="clearModal()" data-bs-toggle="modal" data-bs-target="#projectModal">
+        <i class="fa-solid fa-plus"></i> הוסף פרויקט
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th>שם</th>
+                    <th>חטיבה</th>
+                    <th>מנהל פרויקט (PM)</th>
+                    <th>מהנדס אחראי</th>
+                    <th>סטטוס</th>
+                    <th>פעולות</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in projects %}
+                <tr>
+                    <td class="fw-bold">{{ p.name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ p.division }}</span></td>
+                    <td>{{ p.project_manager.full_name if p.project_manager else '-' }}</td>
+                    <td>{{ p.engineer.full_name if p.engineer else '-' }}</td>
+                    <td>{{ 'פעיל' if not p.is_deleted else 'נמחק' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-light" 
+                                onclick="editProject('{{p.id}}', '{{p.name}}', '{{p.division}}', '{{p.region}}', '{{p.project_manager_id or ''}}', '{{p.engineer_id or ''}}')"
+                                data-bs-toggle="modal" data-bs-target="#projectModal">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="projectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('admin.project_save') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <input type="hidden" name="id" id="modalId"> 
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">פרויקט חדש</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>שם הפרויקט</label>
+                        <input type="text" name="name" id="modalName" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label>חטיבה</label>
+                            <select name="division" id="modalDivision" class="form-select">
+                                <option>תשתיות</option><option>רכבות</option><option>אורבני</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label>אזור</label>
+                            <input type="text" name="region" id="modalRegion" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>מנהל פרויקט (PM)</label>
+                        <select name="project_manager_id" id="modalPM" class="form-select">
+                            <option value="">-- בחר --</option>
+                            {% for u in users %}{% if u.role.name == 'Project Manager' %}
+                            <option value="{{u.id}}">{{u.full_name}}</option>
+                            {% endif %}{% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>מהנדס אחראי</label>
+                        <select name="engineer_id" id="modalEngineer" class="form-select">
+                            <option value="">-- בחר --</option>
+                            {% for u in users %}{% if u.role.name == 'Engineer' %}
+                            <option value="{{u.id}}">{{u.full_name}}</option>
+                            {% endif %}{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// JS מתוקן שמקבל את כל הפרמטרים
+function editProject(id, name, div, region, pmId, engId) {
+    document.getElementById('modalId').value = id; // מילוי ה-ID הנסתר
+    document.getElementById('modalName').value = name;
+    document.getElementById('modalDivision').value = div;
+    document.getElementById('modalRegion').value = region;
+    document.getElementById('modalPM').value = pmId;
+    document.getElementById('modalEngineer').value = engId;
+    document.getElementById('modalTitle').innerText = 'עריכת פרויקט ' + name;
+}
+
+function clearModal() {
+    document.getElementById('modalId').value = ''; // ניקוי ה-ID ליצירה חדשה
+    document.getElementById('modalName').value = '';
+    document.getElementById('modalRegion').value = '';
+    document.getElementById('modalPM').value = '';
+    document.getElementById('modalEngineer').value = '';
+    document.getElementById('modalTitle').innerText = 'פרויקט חדש';
+}
+</script>
+{% endblock %}

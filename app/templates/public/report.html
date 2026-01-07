@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow p-4 mx-auto" style="max-width: 600px;">
+        <h3 class="text-center text-primary mb-4">דיווח פנייה למוקד</h3>
+        
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-3"><label>שם מלא</label><input name="full_name" class="form-control" required></div>
+            <div class="mb-3"><label>טלפון</label><input name="phone" class="form-control" required></div>
+            <div class="mb-3">
+                <label>פרויקט</label>
+                <select name="project_id" class="form-select">
+                    {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="mb-3"><label>נושא</label><input name="subject" class="form-control" required></div>
+            <div class="mb-3"><label>תיאור</label><textarea name="description" class="form-control"></textarea></div>
+            <div class="mb-3"><label>תמונה</label><input type="file" name="image" class="form-control"></div>
+            <button class="btn btn-success w-100">שלח דיווח</button>
+        </form>
+        
+        <div class="text-center mt-3"><a href="/login">כניסה למערכת</a></div>
+    </div>
+</div>
+{% endblock %}

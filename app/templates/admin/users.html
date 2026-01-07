@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fa-solid fa-users"></i> ניהול משתמשים</h2>
+    <button class="btn btn-success" onclick="clearModal()" data-bs-toggle="modal" data-bs-target="#userModal">
+        <i class="fa-solid fa-user-plus"></i> הוסף משתמש
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover align-middle datatable">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>שם מלא</th>
+                    <th>אימייל</th>
+                    <th>תפקיד</th>
+                    <th>פעיל?</th>
+                    <th>פעולות</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.full_name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td><span class="badge bg-secondary">{{ u.role.name }}</span></td>
+                    <td>
+                        {% if u.is_active %}
+                            <i class="fa-solid fa-check text-success"></i>
+                        {% else %}
+                            <i class="fa-solid fa-times text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary"
+                                onclick="editUser('{{u.id}}', '{{u.full_name}}', '{{u.email}}', '{{u.role_id}}')"
+                                data-bs-toggle="modal" data-bs-target="#userModal">
+                            <i class="fa-solid fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ url_for('admin.user_save') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" id="modalUserId">
+          
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title" id="modalTitle">משתמש חדש</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+                <label>שם מלא</label>
+                <input type="text" name="full_name" id="modalName" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label>אימייל</label>
+                <input type="email" name="email" id="modalEmail" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label>תפקיד</label>
+                <select name="role_id" id="modalRole" class="form-select">
+                    {% for r in roles %}
+                    <option value="{{ r.id }}">{{ r.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>סיסמה</label>
+                <input type="password" name="password" class="form-control" placeholder="השאר ריק אם אין שינוי">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+            <button type="submit" class="btn btn-success">שמור</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function editUser(id, name, email, roleId) {
+    document.getElementById('modalUserId').value = id;
+    document.getElementById('modalName').value = name;
+    document.getElementById('modalEmail').value = email;
+    document.getElementById('modalRole').value = roleId;
+    document.getElementById('modalTitle').innerText = 'עריכת משתמש';
+}
+function clearModal() {
+    document.getElementById('modalUserId').value = '';
+    document.getElementById('modalName').value = '';
+    document.getElementById('modalEmail').value = '';
+    document.getElementById('modalTitle').innerText = 'משתמש חדש';
+}
+</script>
+{% endblock %}
