@@ -1,18 +1,32 @@
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, request
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from models import db, User # וודא ש-models.py קיים בתיקייה הראשית
+from models import db, User
+import logging # הוספנו לוגים
 import os
 
 def create_app():
     app = Flask(__name__)
 
-    # הגדרות
-    app.config['SECRET_KEY'] = 'dev_key_12345'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cityflow.db'
+    # --- הגדרות ---
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_12345')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///cityflow.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # אתחול תוספים
+    # --- לוגים לאבחון (Debugger) ---
+    # זה ידפיס ללוג ב-Render כל בקשה שנכנסת
+    logging.basicConfig(level=logging.INFO)
+    
+    @app.before_request
+    def log_request_info():
+        # נרשום רק בקשות POST או בקשות ל-login כדי לא להציף את הלוג
+        if request.method == 'POST' or 'login' in request.path:
+            app.logger.info(f"🔍 REQUEST: {request.method} {request.path}")
+            if request.method == 'POST':
+                # מדפיס את השדות שנשלחו (ללא ערכים רגישים)
+                app.logger.info(f"📦 FORM DATA KEYS: {list(request.form.keys())}")
+
+    # --- אתחול תוספים ---
     db.init_app(app)
     migrate = Migrate(app, db)
     
@@ -24,42 +38,34 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # --- רישום ה-Blueprints (החלק ששונה) ---
+    # --- רישום Blueprints ---
     with app.app_context():
         try:
-            # ייבוא מהמבנה: auth/routes.py
             from auth.routes import auth_bp
-            app.register_blueprint(auth_bp)
+            # url_prefix='/auth' מבטיח שהנתיב יהיה /auth/login
+            app.register_blueprint(auth_bp) 
             
-            # הנחתי שגם השאר באותו מבנה (למשל main/routes.py), אם לא - תעדכן אותי
-            # כרגע שמתי בהערה כדי שלא יקרוס לך אם הם לא קיימים
-            
+            # כאן תוסיף את שאר ה-Blueprints שלך (main, inquiries וכו')
             # from main.routes import main_bp
             # app.register_blueprint(main_bp)
-            
-            # from inquiries.routes import inquiries_bp
-            # app.register_blueprint(inquiries_bp)
 
         except ImportError as e:
-            print(f"⚠️ Warning: Could not register routes: {e}")
+            app.logger.error(f"⚠️ Error importing routes: {e}")
 
-        # יצירת טבלאות + Seed
         db.create_all()
         
-        # הרצת Seed אם אין משתמשים
+        # Seed (אופציונלי, רק אם צריך)
         if not User.query.first():
-            print("⚠️ Database empty. Running seed...")
             try:
-                import seed_data
-                seed_data.seed_database()
-            except ImportError:
-                print("❌ seed_data.py not found")
+                from seed_data import seed
+                seed()
             except Exception as e:
-                print(f"❌ Seed error: {e}")
+                app.logger.error(f"❌ Seed error: {e}")
 
+    # --- נתיב ראשי ---
     @app.route('/')
     def index():
-        # אם ה-main blueprint עדיין לא קיים, נפנה זמנית ל-login
+        # מפנה תמיד ללוגין של ה-Blueprint
         return redirect(url_for('auth.login'))
 
     return app
