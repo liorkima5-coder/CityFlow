@@ -1,20 +1,17 @@
 import os
 
-# קובע את הנתיב הראשי של הפרויקט כדי שנדע איפה לשמור את קובץ ה-DB
-basedir = os.path.abspath(os.path.dirname(__file__))
-
 class Config:
-    # מפתח אבטחה: לוקח מהסביבה או משתמש בברירת מחדל חזקה
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'cityflow-secret-key-2024'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     
-    # הגדרת מסד הנתונים (SQLite)
-    # זה יוצר קובץ בשם cityflow.db בתיקייה הראשית
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'cityflow.db')
+    # DB Configuration
+    # אם יש משתמש DATABASE_URL (ב-Render), נשתמש בו. אחרת - SQLite מקומי.
+    database_url = os.environ.get('DATABASE_URL')
     
-    # ביטול מעקב אחרי שינויים (חוסך זיכרון)
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+        
+    SQLALCHEMY_DATABASE_URI = database_url or 'sqlite:///site.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # הגדרות נוספות (אופציונלי - להעלאת קבצים אם תצטרך בעתיד)
-    UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # מקסימום 16MB לקובץ
+    # הגדרות נוספות
+    WTF_CSRF_ENABLED = True
