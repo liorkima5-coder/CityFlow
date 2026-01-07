@@ -1,68 +1,83 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
-from app.extensions import db
-# --- התיקון כאן: שינוי InquiryMessage ל-ChatMessage ---
-from app.models import Inquiry, ChatMessage, Project, User 
+from app.extensions import db, login_manager
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
-inquiries_bp = Blueprint('inquiries', __name__)
+# --- פונקציית טעינת משתמש (חובה ל-Login) ---
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
-@inquiries_bp.route('/')
-@login_required
-def list_inquiries():
-    if current_user.role.name == 'Admin':
-        inquiries = Inquiry.query.all()
-    elif current_user.role.name == 'Project Manager':
-        # מנהל רואה פניות של פרויקטים שהוא מנהל
-        inquiries = Inquiry.query.join(Project).filter(Project.manager_id == current_user.id).all()
-    else:
-        # מהנדס רואה את הפניות שלו
-        inquiries = Inquiry.query.filter_by(user_id=current_user.id).all()
-    return render_template('inquiries/list.html', inquiries=inquiries)
+# --- מודלים (Models) ---
 
-@inquiries_bp.route('/new', methods=['GET', 'POST'])
-@login_required
-def new_inquiry():
-    if request.method == 'POST':
-        title = request.form.get('title')
-        description = request.form.get('description')
-        project_id = request.form.get('project_id')
-        priority = request.form.get('priority')
-        
-        new_inquiry = Inquiry(
-            title=title,
-            description=description,
-            project_id=project_id,
-            priority=priority,
-            user_id=current_user.id
-        )
-        db.session.add(new_inquiry)
-        db.session.commit()
-        flash('הפנייה נפתחה בהצלחה', 'success')
-        return redirect(url_for('inquiries.list_inquiries'))
-        
-    projects = Project.query.all()
-    return render_template('inquiries/new.html', projects=projects)
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(200))
 
-@inquiries_bp.route('/<int:id>', methods=['GET', 'POST'])
-@login_required
-def view_inquiry(id):
-    inquiry = Inquiry.query.get_or_404(id)
+    def __repr__(self):
+        return f'<Role {self.name}>'
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # טיפול בהוספת הודעה חדשה (צ'אט)
-    if request.method == 'POST':
-        content = request.form.get('content')
-        if content:
-            # --- התיקון כאן: שימוש ב-ChatMessage ---
-            msg = ChatMessage(
-                content=content,
-                inquiry_id=inquiry.id,
-                user_id=current_user.id,
-                created_at=datetime.utcnow()
-            )
-            db.session.add(msg)
-            db.session.commit()
-            flash('ההודעה נוספה', 'success')
-            return redirect(url_for('inquiries.view_inquiry', id=id))
+    # קשרים
+    role = db.relationship('Role', backref='users')
+    projects_managed = db.relationship('Project', backref='manager', lazy=True)
+    inquiries = db.relationship('Inquiry', backref='created_by_user', lazy=True)
+    messages = db.relationship('ChatMessage', backref='author', lazy=True)
+    # קשר ללוגים
+    audit_logs = db.relationship('AuditLog', backref='user', lazy=True)
 
-    return render_template('inquiries/view.html', inquiry=inquiry)
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+class Project(db.Model):
+    __tablename__ = 'projects'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    budget = db.Column(db.Float)
+    status = db.Column(db.String(20), default='New')
+    manager_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    inquiries = db.relationship('Inquiry', backref='project', lazy=True)
+
+class Inquiry(db.Model):
+    __tablename__ = 'inquiries'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='Open')
+    priority = db.Column(db.String(20), default='Medium')
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    messages = db.relationship('ChatMessage', backref='inquiry', lazy=True)
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    inquiry_id = db.Column(db.Integer, db.ForeignKey('inquiries.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- זה המודל שהיה חסר וגרם לשגיאה האחרונה ---
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    action = db.Column(db.String(100), nullable=False)
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
