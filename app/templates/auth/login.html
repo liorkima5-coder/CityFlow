@@ -1,52 +1,56 @@
 {% extends "base.html" %}
 
-{% block title %}התחברות{% endblock %}
+{% block title %}כניסה למערכת{% endblock %}
 
 {% block auth_content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h2 class="text-center mb-4">כניסה למערכת</h2>
-                
-                {# הצגת הודעות שגיאה (פלאש) #}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold text-primary">CityFlow</h2>
+                    <p class="text-muted">ניהול קשרי לקוחות מתקדם</p>
+                </div>
+
+                {# הודעות מערכת #}
                 {% with messages = get_flashed_messages(with_categories=true) %}
                   {% if messages %}
                     {% for category, message in messages %}
-                      <div class="alert alert-{{ category }}">{{ message }}</div>
+                      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
                     {% endfor %}
                   {% endif %}
                 {% endwith %}
 
-                {# --- התיקון הקריטי כאן: הוספנו action שמצביע במפורש ל-auth.login --- #}
                 <form method="POST" action="{{ url_for('auth.login') }}">
-                    
-                    {# חובה: טוקן אבטחה #}
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">כתובת אימייל</label>
-                        <input type="email" class="form-control" id="email" name="email" required autofocus>
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+                        <label for="email">כתובת אימייל</label>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">סיסמה</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                        <label for="password">סיסמה</label>
                     </div>
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">זכור אותי</label>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                        <label class="form-check-label" for="remember">
+                            זכור אותי במחשב זה
+                        </label>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">התחבר</button>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">התחבר</button>
                     </div>
                 </form>
-
-                <div class="mt-3 text-center">
-                    <small>אין לך חשבון? <a href="{{ url_for('auth.register') }}">צור קשר עם המנהל</a></small>
-                </div>
+            </div>
+            <div class="card-footer text-center py-3 bg-light">
+                <small>אין לך משתמש? <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none">צור חשבון חדש</a></small>
             </div>
         </div>
     </div>
