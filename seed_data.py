@@ -1,12 +1,12 @@
-from app import db
-from models import User, Role, Project, Inquiry
+from models import db, User, Role, Inquiry, Project
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 
-def seed_database():
+# שיניתי את שם הפונקציה ל-seed כדי להתאים לקריאה ב-app.py
+def seed():
     print("🌱 Starting database seed...")
 
-    # 1. יצירת תפקידים
+    # 1. יצירת תפקידים (Roles)
     admin_role = Role.query.filter_by(name='Admin').first()
     if not admin_role:
         admin_role = Role(name='Admin', description='Administrator')
@@ -19,7 +19,7 @@ def seed_database():
     
     db.session.commit()
 
-    # 2. יצירת משתמש אדמין (קריטי לכניסה ראשונית)
+    # 2. יצירת משתמש אדמין
     if not User.query.filter_by(email='admin@cityflow.local').first():
         admin_user = User(
             full_name='מנהל מערכת',
@@ -31,9 +31,8 @@ def seed_database():
         db.session.add(admin_user)
         print("   + Created Admin: admin@cityflow.local (Pass: 123456)")
 
-    # 3. יצירת פנייה לדוגמה (כדי שהדשבורד לא יהיה ריק)
+    # 3. יצירת פנייה לדוגמה
     if admin_role: 
-        # מוודאים שיש משתמש לקשר אליו
         user = User.query.filter_by(email='admin@cityflow.local').first()
         if user and not Inquiry.query.first():
             inquiry = Inquiry(
