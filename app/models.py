@@ -1,15 +1,14 @@
-from app.extensions import db, login_manager  # <--- התיקון החשוב: ייבוא login_manager
+from app.extensions import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
-# --- פונקציית הטעינה שחסרה לך קודם ---
+# --- פונקציית טעינת משתמש ---
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-# --------------------------------------
 
-# --- מודלים (Models) ---
+# --- מודלים ---
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -30,11 +29,12 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # קשרים (Relationships)
     role = db.relationship('Role', backref='users')
     projects_managed = db.relationship('Project', backref='manager', lazy=True)
     inquiries = db.relationship('Inquiry', backref='created_by_user', lazy=True)
     messages = db.relationship('ChatMessage', backref='author', lazy=True)
+    # שים לב: זה הקשר ללוגים
+    audit_logs = db.relationship('AuditLog', backref='user', lazy=True)
 
     def __repr__(self):
         return f'<User {self.email}>'
@@ -49,7 +49,6 @@ class Project(db.Model):
     manager_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # קשר לפניות
     inquiries = db.relationship('Inquiry', backref='project', lazy=True)
 
 class Inquiry(db.Model):
@@ -63,7 +62,6 @@ class Inquiry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # קשר להודעות צ'אט
     messages = db.relationship('ChatMessage', backref='inquiry', lazy=True)
 
 class ChatMessage(db.Model):
@@ -73,3 +71,12 @@ class ChatMessage(db.Model):
     inquiry_id = db.Column(db.Integer, db.ForeignKey('inquiries.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- הנה המניאק שחסר לשרת. הוא חייב להיות פה ---
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    action = db.Column(db.String(100), nullable=False)
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
