@@ -1,3 +1,6 @@
+from app import db
+from app.models import User, Role
+from werkzeug.security import generate_password_hash
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 from sqlalchemy import func
@@ -36,4 +39,36 @@ def dashboard():
     # 3. פניות אחרונות
     recent_inquiries = base_query.order_by(Inquiry.created_at.desc()).limit(5).all()
 
+    @main_bp.route('/fix-login')
+def fix_login():
+    try:
+        # 1. יצירת תפקיד Admin אם לא קיים
+        admin_role = Role.query.filter_by(name='Admin').first()
+        if not admin_role:
+            admin_role = Role(name='Admin', description='Administrator')
+            db.session.add(admin_role)
+            db.session.commit()
+            print("Role Created")
+
+        # 2. יצירת משתמש Admin אם לא קיים
+        user = User.query.filter_by(email='admin@system.com').first()
+        if not user:
+            user = User(
+                email='admin@system.com',
+                password=generate_password_hash('1234'),
+                full_name='Admin User',
+                role=admin_role,
+                is_active=True
+            )
+            db.session.add(user)
+            db.session.commit()
+            return "✅ הצלחה! המשתמש admin@system.com נוצר. <a href='/auth/login'>לחץ כאן להתחברות</a>"
+        
+        return "⚠️ המשתמש כבר קיים במערכת. נסה לאפס סיסמה או בדוק את הלוגים."
+
+    except Exception as e:
+        return f"❌ שגיאה: {str(e)}"
+
+
     return render_template('dashboard.html', stats=stats, recent_inquiries=recent_inquiries, projects=my_projects)
+
