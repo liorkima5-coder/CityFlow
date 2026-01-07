@@ -1,26 +1,21 @@
-from models import db, User, Role, Inquiry, Project
+from models import db, User, Role, Inquiry
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 
-# שיניתי את שם הפונקציה ל-seed כדי להתאים לקריאה ב-app.py
 def seed():
-    print("🌱 Starting database seed...")
-
-    # 1. יצירת תפקידים (Roles)
-    admin_role = Role.query.filter_by(name='Admin').first()
-    if not admin_role:
+    print("🌱 Starting Seed Process...")
+    
+    # יצירת תפקידים
+    if not Role.query.first():
         admin_role = Role(name='Admin', description='Administrator')
-        db.session.add(admin_role)
-    
-    user_role = Role.query.filter_by(name='Employee').first()
-    if not user_role:
         user_role = Role(name='Employee', description='User')
-        db.session.add(user_role)
-    
-    db.session.commit()
+        db.session.add_all([admin_role, user_role])
+        db.session.commit()
+        print("   + Roles created")
 
-    # 2. יצירת משתמש אדמין
+    # יצירת אדמין
     if not User.query.filter_by(email='admin@cityflow.local').first():
+        admin_role = Role.query.filter_by(name='Admin').first()
         admin_user = User(
             full_name='מנהל מערכת',
             email='admin@cityflow.local',
@@ -29,22 +24,7 @@ def seed():
             is_active=True
         )
         db.session.add(admin_user)
-        print("   + Created Admin: admin@cityflow.local (Pass: 123456)")
+        db.session.commit()
+        print("   + Admin created: admin@cityflow.local / 123456")
 
-    # 3. יצירת פנייה לדוגמה
-    if admin_role: 
-        user = User.query.filter_by(email='admin@cityflow.local').first()
-        if user and not Inquiry.query.first():
-            inquiry = Inquiry(
-                title='מפגע בטיחותי בגן סאקר',
-                description='ספסל שבור עם מסמרים בולטים',
-                status='Open',
-                priority='High',
-                created_at=datetime.utcnow(),
-                user_id=user.id
-            )
-            db.session.add(inquiry)
-            print("   + Created sample inquiry")
-
-    db.session.commit()
-    print("✅ Seed completed successfully!")
+    print("✅ Seed Finished.")
