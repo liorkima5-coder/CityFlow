@@ -1,58 +1,46 @@
-{% extends "base.html" %}
-
-{% block title %}כניסה למערכת{% endblock %}
+{% extends "layout.html" %}
 
 {% block auth_content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5 col-lg-4">
-        <div class="card shadow border-0 rounded-3">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <h2 class="fw-bold text-primary">CityFlow</h2>
-                    <p class="text-muted">ניהול קשרי לקוחות מתקדם</p>
-                </div>
-
-                {# הודעות מערכת #}
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    {% for category, message in messages %}
-                      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
-                    {% endfor %}
-                  {% endif %}
-                {% endwith %}
-
-                <form method="POST" action="{{ url_for('auth.login') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
-                        <label for="email">כתובת אימייל</label>
-                    </div>
-
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-                        <label for="password">סיסמה</label>
-                    </div>
-
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="remember" id="remember">
-                        <label class="form-check-label" for="remember">
-                            זכור אותי במחשב זה
-                        </label>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">התחבר</button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center py-3 bg-light">
-                <small>אין לך משתמש? <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none">צור חשבון חדש</a></small>
-            </div>
-        </div>
+<div class="text-center mb-4">
+    <div class="mb-3">
+        <i class="fa-solid fa-city text-primary" style="font-size: 3rem;"></i>
     </div>
+    <h3 class="fw-bold">CityFlow</h3>
+    <p class="text-muted">מערכת ניהול קשרי לקוחות</p>
 </div>
+
+<form method="POST" action="">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+    
+    <div class="form-floating mb-3">
+        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+        <label for="email">כתובת אימייל</label>
+    </div>
+    
+    <div class="form-floating mb-4">
+        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+        <label for="password">סיסמה</label>
+    </div>
+
+    <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary btn-lg fw-bold">כניסה למערכת</button>
+    </div>
+
+    <div class="text-center mt-4">
+        <small class="text-muted">אין לך גישה? פנה למנהל המערכת</small>
+    </div>
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="mt-4">
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} text-center text-xs py-2 mb-2">
+                {{ message }}
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
 {% endblock %}
