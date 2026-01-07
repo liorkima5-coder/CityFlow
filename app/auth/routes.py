@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.security import check_password_hash
-from app.models import User
+from werkzeug.security import check_password_hash, generate_password_hash
+from app.extensions import db
+from app.models import User, Role
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -18,7 +19,7 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if not user or not check_password_hash(user.password, password):
-            flash('פרטי ההתחברות שגויים. נסה שוב.', 'danger')
+            flash('פרטי ההתחברות שגויים. נסה שוב או צור חשבון חדש.', 'danger')
             return redirect(url_for('auth.login'))
 
         login_user(user, remember=remember)
@@ -26,13 +27,43 @@ def login():
 
     return render_template('auth/login.html')
 
-# --- התיקון: הוספנו את הנתיב הזה כדי שהאתר לא יקרוס ---
-@auth_bp.route('/register')
+@auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    # כרגע נחזיר את המשתמש אחורה כי אין דף הרשמה
-    flash('ההרשמה למערכת סגורה. אנא פנה למנהל המערכת ליצירת משתמש.', 'warning')
-    return redirect(url_for('auth.login'))
-# -------------------------------------------------------
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+        
+    if request.method == 'POST':
+        email = request.form.get('email')
+        full_name = request.form.get('full_name')
+        password = request.form.get('password')
+        
+        # בדיקה אם המשתמש קיים
+        if User.query.filter_by(email=email).first():
+            flash('כתובת האימייל הזו כבר רשומה במערכת.', 'warning')
+            return redirect(url_for('auth.register'))
+            
+        # יצירת משתמש חדש (ברירת מחדל: מנהל פרויקט, כדי שיהיה לו מעניין)
+        # אם אין תפקידים במערכת - ניצור אותם אוטומטית
+        role = Role.query.filter_by(name='Project Manager').first()
+        if not role:
+            role = Role(name='Project Manager', description='Default User Role')
+            db.session.add(role)
+            
+        new_user = User(
+            email=email,
+            full_name=full_name,
+            password=generate_password_hash(password),
+            role=role,
+            is_active=True
+        )
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash('החשבון נוצר בהצלחה! כעת ניתן להתחבר.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/register.html')
 
 @auth_bp.route('/logout')
 @login_required
