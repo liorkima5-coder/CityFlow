@@ -1,9 +1,0 @@
-Flask
-Flask-SQLAlchemy
-Flask-Login
-Flask-WTF
-email-validator
-Faker
-python-dotenv
-Werkzeug
-gunicorn
