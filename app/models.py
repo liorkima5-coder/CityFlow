@@ -3,6 +3,10 @@ from flask_login import UserMixin
 from sqlalchemy.dialects.mysql import JSON
 from app.extensions import db
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 # --- RBAC Models ---
 roles_permissions = db.Table('roles_permissions',
     db.Column('role_id', db.Integer, db.ForeignKey('roles.id')),
@@ -111,4 +115,5 @@ class AuditLog(db.Model):
     ip_address = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.now)
     
+
     user = db.relationship('User')
