@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white"><h4>פתיחת פנייה (פנימי)</h4></div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col"><label>שם מלא</label><input type="text" name="full_name" class="form-control" required></div>
+                        <div class="col"><label>טלפון</label><input type="text" name="phone" class="form-control" required></div>
+                    </div>
+                    <div class="mb-3">
+                        <label>פרויקט</label>
+                        <select name="project_id" class="form-select" required>
+                            {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3"><label>נושא</label><input type="text" name="subject" class="form-control" required></div>
+                    <div class="mb-3"><label>תיאור</label><textarea name="description" class="form-control"></textarea></div>
+                    <div class="mb-3"><label>תמונה</label><input type="file" name="image" class="form-control"></div>
+                    <button type="submit" class="btn btn-success w-100">פתח פנייה</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

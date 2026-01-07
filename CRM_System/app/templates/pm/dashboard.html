@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4 text-primary">ניהול פרויקטים - {{ current_user.full_name }}</h2>
+<div class="row mb-4">
+    <div class="col-md-12">
+        <a href="/internal/new_inquiry" class="btn btn-success"><i class="fa-solid fa-plus"></i> פנייה חדשה לפרויקט שלי</a>
+    </div>
+</div>
+<div class="row">
+    {% for proj in pm_data %}
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between">
+                <span>{{ proj.name }}</span>
+                <span class="badge bg-secondary">{{ proj.division }}</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>פתוחות: <b class="text-danger">{{ proj.open }}</b></span>
+                    <span>סגורות: <b class="text-success">{{ proj.closed }}</b></span>
+                </div>
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ proj.percent }}%"></div>
+                </div>
+                <a href="/admin/inquiries?project_id={{ proj.id }}" class="btn btn-sm btn-outline-primary w-100">צפה בפניות</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

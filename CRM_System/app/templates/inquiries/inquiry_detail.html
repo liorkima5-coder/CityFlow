@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-light fw-bold">
+                פרטי פנייה #{{ inquiry.id }}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ inquiry.subject }}</h5>
+                <p class="card-text text-muted">{{ inquiry.description }}</p>
+                
+                {% if inquiry.image_filename %}
+                <div class="mb-3">
+                    <a href="/uploads/{{ inquiry.image_filename }}" target="_blank">
+                        <img src="/uploads/{{ inquiry.image_filename }}" class="img-fluid rounded border" alt="תמונה מצורפת">
+                    </a>
+                </div>
+                {% endif %}
+
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>לקוח:</span> <strong>{{ inquiry.customer.full_name }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>טלפון:</span> <strong>{{ inquiry.customer.phone }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>פרויקט:</span> <strong>{{ inquiry.project.name }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>תאריך יצירה:</span> <span>{{ inquiry.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">פעולות ניהול</div>
+            <div class="card-body">
+                <form action="/inquiries/{{ inquiry.id }}/update" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">סטטוס</label>
+                        <select name="status" class="form-select">
+                            <option value="חדש" {% if inquiry.status == 'חדש' %}selected{% endif %}>חדש</option>
+                            <option value="בטיפול" {% if inquiry.status == 'בטיפול' %}selected{% endif %}>בטיפול</option>
+                            <option value="טופל" {% if inquiry.status == 'טופל' %}selected{% endif %}>טופל/סגור</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">שייך מטפל</label>
+                        <select name="assigned_to_id" class="form-select">
+                            <option value="">ללא שיוך</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}" {% if inquiry.assigned_to_id == u.id %}selected{% endif %}>
+                                {{ u.full_name }} ({{ u.role }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <hr>
+                    <h6>הוסף תגובה / עדכון</h6>
+                    <div class="mb-2">
+                        <textarea name="message" class="form-control" rows="3" placeholder="כתוב הערה פנימית או תשובה ללקוח..."></textarea>
+                    </div>
+                    <div class="mb-2 form-check">
+                        <input type="checkbox" class="form-check-input" id="isPublic" name="is_public">
+                        <label class="form-check-label" for="isPublic">גלוי ללקוח?</label>
+                    </div>
+                    <div class="mb-3">
+                         <input type="file" name="attachment" class="form-control form-control-sm">
+                    </div>
+
+                    <button class="btn btn-success w-100">עדכן פנייה</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <i class="fa-solid fa-history"></i> היסטוריית טיפול
+            </div>
+            <div class="card-body" style="background-color: #f8f9fa; max-height: 80vh; overflow-y: auto;">
+                
+                {% if not inquiry.comments %}
+                    <div class="text-center text-muted mt-5">אין עדכונים עדיין.</div>
+                {% endif %}
+
+                {% for comment in inquiry.comments %}
+                <div class="d-flex mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            {{ comment.author_name[0] }}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center bg-white py-1">
+                                <strong>{{ comment.author_name }}</strong>
+                                <small class="text-muted">{{ comment.created_at.strftime('%d/%m %H:%M') }}</small>
+                            </div>
+                            <div class="card-body py-2">
+                                <p class="mb-1">{{ comment.message }}</p>
+                                {% if comment.attachment_filename %}
+                                    <div class="mt-2">
+                                        <a href="/uploads/{{ comment.attachment_filename }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                            <i class="fa-solid fa-paperclip"></i> קובץ מצורף
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if comment.is_public %}
+                            <div class="card-footer bg-success text-white py-0 small">
+                                <i class="fa-solid fa-globe"></i> גלוי ללקוח
+                            </div>
+                            {% else %}
+                            <div class="card-footer bg-light text-muted py-0 small">
+                                <i class="fa-solid fa-lock"></i> הערה פנימית
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

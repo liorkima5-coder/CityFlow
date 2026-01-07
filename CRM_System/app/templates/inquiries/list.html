@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fa-solid fa-inbox"></i> מאגר פניות</h2>
+    
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('inquiries.list_inquiries') }}" class="btn btn-outline-primary {{ 'active' if not request.args.get('status') }}">הכל</a>
+        <a href="{{ url_for('inquiries.list_inquiries', status='New') }}" class="btn btn-outline-danger {{ 'active' if request.args.get('status') == 'New' }}">חדשים</a>
+        <a href="{{ url_for('inquiries.list_inquiries', status='In Progress') }}" class="btn btn-outline-warning {{ 'active' if request.args.get('status') == 'In Progress' }}">בטיפול</a>
+        <a href="{{ url_for('inquiries.list_inquiries', status='Closed') }}" class="btn btn-outline-success {{ 'active' if request.args.get('status') == 'Closed' }}">סגורים</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        {% if inquiries %}
+        <table class="table table-hover align-middle datatable">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>תאריך עדכון</th>
+                    <th>פרויקט</th>
+                    <th>נושא</th>
+                    <th>סטטוס</th>
+                    <th>עדיפות</th>
+                    <th>מטפל</th>
+                    <th>פעולות</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in inquiries %}
+                <tr class="{{ 'table-danger' if i.sla_status == 'danger' else '' }}">
+                    <td>{{ i.id }}</td>
+                    <td>{{ i.updated_at.strftime('%d/%m %H:%M') }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ i.project.name }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('inquiries.detail', id=i.id) }}" class="text-decoration-none fw-bold text-dark">
+                            {{ i.subject }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if i.status == 'New' %}
+                            <span class="badge bg-danger">חדש</span>
+                        {% elif i.status == 'In Progress' %}
+                            <span class="badge bg-warning text-dark">בטיפול</span>
+                        {% elif i.status == 'Waiting for Customer' %}
+                            <span class="badge bg-info text-dark">ממתין ללקוח</span>
+                        {% else %}
+                            <span class="badge bg-success">סגור</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if i.priority == 'High' %}
+                            <span class="text-danger fw-bold"><i class="fa fa-arrow-up"></i> גבוהה</span>
+                        {% elif i.priority == 'Low' %}
+                            <span class="text-muted"><i class="fa fa-arrow-down"></i> נמוכה</span>
+                        {% else %}
+                            <span>רגילה</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if i.assigned_to %}
+                            <small>{{ i.assigned_to.full_name }}</small>
+                        {% else %}
+                            <span class="text-muted small">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('inquiries.detail', id=i.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fa-solid fa-eye"></i> צפה
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="text-center py-5">
+                <h4 class="text-muted">לא נמצאו פניות</h4>
+                <p>נסה לשנות את הסינון או צור פנייה חדשה.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
