@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.extensions import db
@@ -18,8 +18,9 @@ def login():
 
         user = User.query.filter_by(email=email).first()
 
+        # בדיקה קפדנית
         if not user or not check_password_hash(user.password, password):
-            flash('פרטי ההתחברות שגויים. נסה שוב או צור חשבון חדש.', 'danger')
+            flash('פרטי ההתחברות שגויים.', 'danger')
             return redirect(url_for('auth.login'))
 
         login_user(user, remember=remember)
@@ -38,36 +39,37 @@ def register():
             full_name = request.form.get('full_name')
             password = request.form.get('password')
             
-            # בדיקה אם המשתמש קיים
             if User.query.filter_by(email=email).first():
-                flash('כתובת האימייל הזו כבר רשומה במערכת.', 'warning')
+                flash('האימייל כבר קיים במערכת.', 'warning')
                 return redirect(url_for('auth.register'))
                 
-            # יצירת תפקיד ברירת מחדל אם לא קיים (מונע קריסה)
-            role = Role.query.filter_by(name='Project Manager').first()
-            if not role:
-                role = Role(name='Project Manager', description='Default Role Created Automatically')
-                db.session.add(role)
-                # שים לב: אנחנו לא עושים commit כאן, אלא בסוף עם המשתמש
-                
+            # שליפת תפקיד ברירת מחדל
+            default_role = Role.query.filter_by(name='Project Manager').first()
+            
+            # Fail-safe: אם איכשהו התפקיד לא קיים, ניצור אותו ידנית
+            if not default_role:
+                current_app.logger.warning("Default role not found during register, creating fallback.")
+                default_role = Role(name='Project Manager', description='Fallback Role')
+                db.session.add(default_role)
+
             new_user = User(
                 email=email,
                 full_name=full_name,
                 password=generate_password_hash(password),
-                role=role,
+                role=default_role,
                 is_active=True
             )
             
             db.session.add(new_user)
             db.session.commit()
             
-            flash('החשבון נוצר בהצלחה! כעת ניתן להתחבר.', 'success')
+            flash('החשבון נוצר בהצלחה! נא להתחבר.', 'success')
             return redirect(url_for('auth.login'))
             
         except Exception as e:
-            db.session.rollback() # ביטול שינויים במקרה של שגיאה
-            print(f"Error during registration: {e}") # הדפסה ללוגים
-            flash(f'שגיאה ביצירת החשבון: {str(e)}', 'danger')
+            db.session.rollback()
+            current_app.logger.exception("Error during registration")
+            flash('שגיאה ביצירת החשבון. נסה שנית מאוחר יותר.', 'danger')
             return redirect(url_for('auth.register'))
 
     return render_template('auth/register.html')
